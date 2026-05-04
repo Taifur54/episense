@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EpiSense — Global Pandemic Early Warning System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+<style>
+:root {
+  --bg:       #080c10;
+  --bg2:      #0d1117;
+  --bg3:      #131920;
+  --border:   rgba(255,255,255,0.07);
+  --border2:  rgba(255,255,255,0.12);
+  --text:     #e2e8f0;
+  --text2:    #8899aa;
+  --text3:    #4a5568;
+  --green:    #00ff88;
+  --green2:   #00cc66;
+  --green-bg: rgba(0,255,136,0.07);
+  --amber:    #ffb020;
+  --amber-bg: rgba(255,176,32,0.07);
+  --red:      #ff4444;
+  --red-bg:   rgba(255,68,68,0.08);
+  --blue:     #4488ff;
+  --blue-bg:  rgba(68,136,255,0.07);
+  --radius:   8px;
+  --mono:     'JetBrains Mono', monospace;
+  --sans:     'Syne', sans-serif;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--text);
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── TOPBAR ── */
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 0 20px;
+  height: 52px;
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-mark {
+  width: 28px; height: 28px;
+  border-radius: 6px;
+  background: var(--green);
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.logo-mark::after {
+  content: '';
+  position: absolute;
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--bg);
+  animation: pulse-core 2s ease-in-out infinite;
+}
+
+@keyframes pulse-core {
+  0%,100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(0.7); opacity: 0.6; }
+}
+
+.logo-text {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.02em;
+}
+
+.logo-text span { color: var(--green); }
+
+.topbar-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text2);
+}
+
+.status-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: blink 2s ease-in-out infinite;
+}
+
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+.topbar-stats {
+  display: flex;
+  gap: 24px;
+  margin-left: auto;
+}
+
+.topbar-stat {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+}
+
+.topbar-stat-label { color: var(--text3); }
+.topbar-stat-value { color: var(--text); font-weight: 500; }
+.topbar-stat-value.green { color: var(--green); }
+.topbar-stat-value.amber { color: var(--amber); }
+.topbar-stat-value.red { color: var(--red); }
+
+.topbar-time {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--text2);
+  padding-left: 20px;
+  border-left: 1px solid var(--border);
+}
+
+/* ── LAYOUT ── */
+.layout {
+  display: grid;
+  grid-template-columns: 280px 1fr 300px;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* ── LEFT PANEL ── */
+.left-panel {
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.panel-header {
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.panel-title {
+  font-size: 10px;
+  font-family: var(--mono);
+  color: var(--text3);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.panel-count {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text2);
+}
+
+.alert-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.alert-list::-webkit-scrollbar { width: 3px; }
+.alert-list::-webkit-scrollbar-track { background: transparent; }
+.alert-list::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+.alert-item {
+  padding: 12px;
+  border-radius: var(--radius);
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition: all 0.15s;
+  border: 1px solid transparent;
+  position: relative;
+  overflow: hidden;
+}
+
+.alert-item::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 2px;
+}
+
+.alert-item.critical { background: var(--red-bg); border-color: rgba(255,68,68,0.15); }
+.alert-item.critical::before { background: var(--red); }
+.alert-item.warning { background: var(--amber-bg); border-color: rgba(255,176,32,0.15); }
+.alert-item.warning::before { background: var(--amber); }
+.alert-item.watch { background: var(--blue-bg); border-color: rgba(68,136,255,0.15); }
+.alert-item.watch::before { background: var(--blue); }
+.alert-item.normal { background: var(--green-bg); border-color: rgba(0,255,136,0.1); }
+.alert-item.normal::before { background: var(--green); }
+
+.alert-item:hover { border-color: var(--border2); }
+.alert-item.selected { border-color: var(--border2) !important; }
+
+.alert-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.alert-country {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.alert-badge {
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.badge-critical { background: rgba(255,68,68,0.2); color: var(--red); }
+.badge-warning { background: rgba(255,176,32,0.2); color: var(--amber); }
+.badge-watch { background: rgba(68,136,255,0.2); color: var(--blue); }
+.badge-normal { background: rgba(0,255,136,0.15); color: var(--green); }
+
+.alert-disease {
+  font-size: 11px;
+  color: var(--text2);
+  margin-bottom: 6px;
+}
+
+.alert-prob-bar {
+  height: 3px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.alert-prob-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 1s ease;
+}
+
+.fill-critical { background: var(--red); }
+.fill-warning { background: var(--amber); }
+.fill-watch { background: var(--blue); }
+.fill-normal { background: var(--green); }
+
+.alert-meta {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text3);
+}
+
+/* ── MAP ── */
+.map-container {
+  position: relative;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+.world-map {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.map-overlay {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* SVG World Map Canvas */
+#mapCanvas {
+  width: 100%;
+  height: 100%;
+}
+
+/* Map controls */
+.map-controls {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  display: flex;
+  gap: 8px;
+}
+
+.map-btn {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 6px 12px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.map-btn:hover { border-color: var(--border2); color: var(--text); }
+.map-btn.active { border-color: var(--green); color: var(--green); background: var(--green-bg); }
+
+.map-legend {
+  position: absolute;
+  bottom: 14px;
+  left: 14px;
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  display: flex;
+  gap: 16px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text2);
+}
+
+.legend-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+}
+
+/* Sensor nodes on map */
+.sensor-node {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  pointer-events: all;
+}
+
+.node-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid;
+  animation: ring-expand 2.5s ease-out infinite;
+  transform: translate(-50%, -50%);
+  top: 50%; left: 50%;
+}
+
+@keyframes ring-expand {
+  0% { width: 8px; height: 8px; opacity: 0.8; }
+  100% { width: 40px; height: 40px; opacity: 0; }
+}
+
+.node-dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--bg);
+  position: relative;
+  z-index: 2;
+}
+
+/* ── RIGHT PANEL ── */
+.right-panel {
+  background: var(--bg2);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.detail-header {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.detail-country {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.detail-region {
+  font-size: 11px;
+  color: var(--text2);
+  font-family: var(--mono);
+}
+
+.detail-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+.detail-body::-webkit-scrollbar { width: 3px; }
+.detail-body::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+
+/* Outbreak probability gauge */
+.prob-gauge {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+.prob-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text3);
+  letter-spacing: 0.1em;
+  margin-bottom: 12px;
+}
+
+.prob-value {
+  font-size: 48px;
+  font-weight: 700;
+  font-family: var(--mono);
+  line-height: 1;
+  margin-bottom: 8px;
+  transition: color 0.5s;
+}
+
+.prob-bar {
+  height: 6px;
+  background: rgba(255,255,255,0.06);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.prob-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 1s ease, background 0.5s;
+}
+
+.prob-status {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* Signal cards */
+.signal-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.signal-card {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+}
+
+.signal-name {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text3);
+  letter-spacing: 0.08em;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.signal-value {
+  font-size: 20px;
+  font-weight: 700;
+  font-family: var(--mono);
+  margin-bottom: 2px;
+}
+
+.signal-change {
+  font-family: var(--mono);
+  font-size: 10px;
+}
+
+.signal-change.up { color: var(--red); }
+.signal-change.down { color: var(--green); }
+.signal-change.flat { color: var(--text3); }
+
+/* Mini sparkline */
+.sparkline {
+  height: 24px;
+  margin-top: 6px;
+}
+
+/* Timeline */
+.timeline-section {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 12px;
+  margin-bottom: 10px;
+}
+
+.section-label {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text3);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+.timeline-item {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+  align-items: flex-start;
+}
+
+.timeline-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  margin-top: 5px;
+  flex-shrink: 0;
+}
+
+.timeline-text {
+  font-size: 11px;
+  color: var(--text2);
+  line-height: 1.5;
+}
+
+.timeline-time {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--text3);
+  margin-top: 2px;
+}
+
+/* Recommendation */
+.rec-box {
+  background: var(--amber-bg);
+  border: 1px solid rgba(255,176,32,0.15);
+  border-radius: var(--radius);
+  padding: 12px;
+  margin-bottom: 10px;
+}
+
+.rec-title {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--amber);
+  letter-spacing: 0.1em;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.rec-item {
+  font-size: 11px;
+  color: var(--text2);
+  margin-bottom: 5px;
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.rec-arrow {
+  color: var(--amber);
+  font-family: var(--mono);
+  font-size: 10px;
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+
+/* Bottom stats bar */
+.bottom-bar {
+  height: 36px;
+  background: var(--bg2);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+  gap: 32px;
+  flex-shrink: 0;
+}
+
+.bottom-stat {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--text3);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.bottom-stat span { color: var(--text2); }
+
+/* Tooltip */
+.tooltip {
+  position: absolute;
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--text);
+  pointer-events: none;
+  z-index: 100;
+  display: none;
+  white-space: nowrap;
+}
+
+/* New alert animation */
+@keyframes slide-in {
+  from { transform: translateX(-20px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.alert-item { animation: slide-in 0.3s ease; }
+
+@keyframes flash-alert {
+  0%,100% { background: var(--red-bg); }
+  50% { background: rgba(255,68,68,0.18); }
+}
+
+.alert-item.critical.new-alert { animation: flash-alert 1s ease 3; }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-mark"></div>
+    <div class="logo-text">Epi<span>Sense</span></div>
+  </div>
+  <div class="topbar-status">
+    <div class="status-dot"></div>
+    LIVE · Global Surveillance Network
+  </div>
+  <div class="topbar-stats">
+    <div class="topbar-stat">
+      <span class="topbar-stat-label">NODES ONLINE</span>
+      <span class="topbar-stat-value green" id="stat-nodes">2,847</span>
+    </div>
+    <div class="topbar-stat">
+      <span class="topbar-stat-label">COUNTRIES</span>
+      <span class="topbar-stat-value" id="stat-countries">94</span>
+    </div>
+    <div class="topbar-stat">
+      <span class="topbar-stat-label">ACTIVE ALERTS</span>
+      <span class="topbar-stat-value amber" id="stat-alerts">7</span>
+    </div>
+    <div class="topbar-stat">
+      <span class="topbar-stat-label">CRITICAL</span>
+      <span class="topbar-stat-value red" id="stat-critical">2</span>
+    </div>
+  </div>
+  <div class="topbar-time" id="clock">--:--:-- UTC</div>
+</div>
+
+<!-- MAIN LAYOUT -->
+<div class="layout">
+
+  <!-- LEFT: Alert list -->
+  <div class="left-panel">
+    <div class="panel-header">
+      <span class="panel-title">Active Signals</span>
+      <span class="panel-count" id="alert-count">12 regions</span>
+    </div>
+    <div class="alert-list" id="alertList"></div>
+  </div>
+
+  <!-- CENTER: Map -->
+  <div class="map-container">
+    <canvas id="mapCanvas"></canvas>
+
+    <div class="map-controls">
+      <button class="map-btn active" onclick="setLayer('outbreak')">
+        <i data-lucide="activity" style="width:12px;height:12px;"></i> Outbreak Risk
+      </button>
+      <button class="map-btn" onclick="setLayer('pharmacy')">
+        <i data-lucide="pill" style="width:12px;height:12px;"></i> Pharmacy
+      </button>
+      <button class="map-btn" onclick="setLayer('clinic')">
+        <i data-lucide="heart-pulse" style="width:12px;height:12px;"></i> Clinic Load
+      </button>
+    </div>
+
+    <div class="map-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:var(--red)"></div>Critical (&gt;70%)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div>Warning (40–70%)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--blue)"></div>Watch (20–40%)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>Normal (&lt;20%)</div>
+    </div>
+
+    <div class="tooltip" id="tooltip"></div>
+  </div>
+
+  <!-- RIGHT: Detail panel -->
+  <div class="right-panel">
+    <div class="detail-header">
+      <div class="detail-country" id="detail-country">Select a region</div>
+      <div class="detail-region" id="detail-region">Click any alert or map node</div>
+    </div>
+    <div class="detail-body" id="detailBody">
+      <div style="padding:20px;text-align:center;color:var(--text3);font-family:var(--mono);font-size:11px;margin-top:40px;">
+        Select a region from the alert list<br>or click a node on the map<br><br>
+        <i data-lucide="globe" style="width:32px;height:32px;stroke:var(--text3);margin-top:8px;"></i>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- BOTTOM BAR -->
+<div class="bottom-bar">
+  <div class="bottom-stat">DATA SOURCES <span>Pharmacy · Clinic · Wastewater · Social · Travel · Absenteeism</span></div>
+  <div class="bottom-stat">AI MODEL <span>EpiNet v2.1 · Anomaly Detection</span></div>
+  <div class="bottom-stat">LAST SYNC <span id="last-sync">just now</span></div>
+  <div class="bottom-stat" style="margin-left:auto;">
+    <span style="color:var(--green);">● </span><span>All systems operational</span>
+  </div>
+</div>
+
+<script>
+// ── CONFIG ──
+const API_URL = 'http://localhost:5050'; // Run episense_api.py locally to connect live AI
+let apiConnected = false;
+let regions = [];
+
+// ── FALLBACK DATA (shown when API is offline) ──
+const FALLBACK_REGIONS = [
+  { id:'IDN', name:'Indonesia', region:'Southeast Asia', lat:-2.5, lng:118, probability:82, alert_level:'critical', disease_hint:'Respiratory (H5N2-like)', signals:{pharmacy_index:{value:72,baseline:19,change_pct:278,flagged:true},clinic_load:{value:48,baseline:13,change_pct:269,flagged:true},absenteeism:{value:31,baseline:9,change_pct:244,flagged:true},wastewater_score:{value:78,baseline:10,change_pct:680,flagged:true}}, recommendations:['Deploy field investigation team immediately','Alert WHO SEARO regional office','Activate hospital surge capacity'] },
+  { id:'NGA', name:'Nigeria', region:'West Africa', lat:9, lng:8, probability:74, alert_level:'critical', disease_hint:'Haemorrhagic fever signal', signals:{pharmacy_index:{value:58,baseline:18,change_pct:222,flagged:true},clinic_load:{value:42,baseline:14,change_pct:200,flagged:true},absenteeism:{value:28,baseline:10,change_pct:180,flagged:true},wastewater_score:{value:65,baseline:12,change_pct:442,flagged:true}}, recommendations:['Alert Nigeria CDC immediately','Activate Lassa fever protocols','WHO AFRO notification'] },
+  { id:'BRA', name:'Brazil', region:'South America', lat:-10, lng:-53, probability:61, alert_level:'warning', disease_hint:'Arbovirus (Dengue/Zika)', signals:{pharmacy_index:{value:38,baseline:15,change_pct:153,flagged:true},clinic_load:{value:28,baseline:12,change_pct:133,flagged:false},absenteeism:{value:18,baseline:8,change_pct:125,flagged:false},wastewater_score:{value:42,baseline:10,change_pct:320,flagged:true}}, recommendations:['Issue public health advisory','Increase mosquito surveillance','Alert PAHO regional office'] },
+  { id:'IND', name:'India', region:'South Asia', lat:20, lng:78, probability:55, alert_level:'warning', disease_hint:'Respiratory cluster — North', signals:{pharmacy_index:{value:32,baseline:14,change_pct:128,flagged:true},clinic_load:{value:24,baseline:11,change_pct:118,flagged:false},absenteeism:{value:21,baseline:9,change_pct:133,flagged:false},wastewater_score:{value:35,baseline:9,change_pct:289,flagged:true}}, recommendations:['Alert India MoH surveillance team','Monitor Delhi, UP, Haryana hospitals'] },
+  { id:'EGY', name:'Egypt', region:'North Africa', lat:26, lng:30, probability:47, alert_level:'warning', disease_hint:'Gastrointestinal outbreak signal', signals:{pharmacy_index:{value:28,baseline:13,change_pct:115,flagged:false},clinic_load:{value:22,baseline:11,change_pct:100,flagged:false},absenteeism:{value:16,baseline:8,change_pct:100,flagged:false},wastewater_score:{value:55,baseline:8,change_pct:588,flagged:true}}, recommendations:['Alert Egypt MOHP','Investigate water supply in Cairo'] },
+  { id:'MEX', name:'Mexico', region:'North America', lat:23, lng:-102, probability:38, alert_level:'watch', disease_hint:'Influenza A activity', signals:{pharmacy_index:{value:20,baseline:12,change_pct:67,flagged:false},clinic_load:{value:16,baseline:10,change_pct:60,flagged:false},absenteeism:{value:12,baseline:7,change_pct:71,flagged:false},wastewater_score:{value:18,baseline:8,change_pct:125,flagged:false}}, recommendations:['Continue routine surveillance'] },
+  { id:'PAK', name:'Pakistan', region:'South Asia', lat:30, lng:69, probability:35, alert_level:'watch', disease_hint:'Cholera signal — Sindh', signals:{pharmacy_index:{value:22,baseline:13,change_pct:69,flagged:false},clinic_load:{value:18,baseline:11,change_pct:64,flagged:false},absenteeism:{value:11,baseline:8,change_pct:38,flagged:false},wastewater_score:{value:38,baseline:9,change_pct:322,flagged:true}}, recommendations:['Alert Pakistan NDMA','Water quality testing'] },
+  { id:'VNM', name:'Vietnam', region:'Southeast Asia', lat:16, lng:108, probability:28, alert_level:'watch', disease_hint:'Novel respiratory signal', signals:{pharmacy_index:{value:18,baseline:13,change_pct:38,flagged:false},clinic_load:{value:14,baseline:10,change_pct:40,flagged:false},absenteeism:{value:9,baseline:7,change_pct:29,flagged:false},wastewater_score:{value:14,baseline:8,change_pct:75,flagged:false}}, recommendations:['Continue monitoring'] },
+  { id:'ZAF', name:'South Africa', region:'Southern Africa', lat:-29, lng:25, probability:22, alert_level:'watch', disease_hint:'TB signal elevation', signals:{pharmacy_index:{value:16,baseline:12,change_pct:33,flagged:false},clinic_load:{value:14,baseline:11,change_pct:27,flagged:false},absenteeism:{value:9,baseline:7,change_pct:29,flagged:false},wastewater_score:{value:16,baseline:9,change_pct:78,flagged:false}}, recommendations:['Alert NICD South Africa','Continue monitoring'] },
+  { id:'DEU', name:'Germany', region:'Europe', lat:51, lng:10, probability:18, alert_level:'normal', disease_hint:'Seasonal flu (normal)', signals:{pharmacy_index:{value:14,baseline:12,change_pct:17,flagged:false},clinic_load:{value:12,baseline:10,change_pct:20,flagged:false},absenteeism:{value:7,baseline:6,change_pct:17,flagged:false},wastewater_score:{value:10,baseline:8,change_pct:25,flagged:false}}, recommendations:['No action required'] },
+  { id:'AUS', name:'Australia', region:'Oceania', lat:-25, lng:134, probability:12, alert_level:'normal', disease_hint:'No significant signals', signals:{pharmacy_index:{value:12,baseline:11,change_pct:9,flagged:false},clinic_load:{value:10,baseline:9,change_pct:11,flagged:false},absenteeism:{value:6,baseline:6,change_pct:0,flagged:false},wastewater_score:{value:8,baseline:7,change_pct:14,flagged:false}}, recommendations:['No action required'] },
+  { id:'CAN', name:'Canada', region:'North America', lat:56, lng:-96, probability:14, alert_level:'normal', disease_hint:'Seasonal respiratory (normal)', signals:{pharmacy_index:{value:13,baseline:11,change_pct:18,flagged:false},clinic_load:{value:11,baseline:10,change_pct:10,flagged:false},absenteeism:{value:7,baseline:6,change_pct:17,flagged:false},wastewater_score:{value:9,baseline:8,change_pct:13,flagged:false}}, recommendations:['No action required'] },
+  { id:'BGD', name:'Bangladesh', region:'South Asia', lat:23.8, lng:90.4, probability:15, alert_level:'normal', disease_hint:'No significant signals', signals:{pharmacy_index:{value:14,baseline:13,change_pct:8,flagged:false},clinic_load:{value:12,baseline:11,change_pct:9,flagged:false},absenteeism:{value:7,baseline:7,change_pct:0,flagged:false},wastewater_score:{value:10,baseline:9,change_pct:11,flagged:false}}, recommendations:['No action required'] },
+  { id:'PHL', name:'Philippines', region:'Southeast Asia', lat:12.9, lng:121.8, probability:16, alert_level:'normal', disease_hint:'No significant signals', signals:{pharmacy_index:{value:15,baseline:13,change_pct:15,flagged:false},clinic_load:{value:12,baseline:11,change_pct:9,flagged:false},absenteeism:{value:8,baseline:7,change_pct:14,flagged:false},wastewater_score:{value:11,baseline:9,change_pct:22,flagged:false}}, recommendations:['No action required'] },
+  { id:'KEN', name:'Kenya', region:'East Africa', lat:-0.5, lng:37.9, probability:16, alert_level:'normal', disease_hint:'No significant signals', signals:{pharmacy_index:{value:15,baseline:13,change_pct:15,flagged:false},clinic_load:{value:12,baseline:11,change_pct:9,flagged:false},absenteeism:{value:8,baseline:7,change_pct:14,flagged:false},wastewater_score:{value:12,baseline:9,change_pct:33,flagged:false}}, recommendations:['No action required'] },
+];
+
+// ── API INTEGRATION ──
+async function fetchFromAPI() {
+  try {
+    const res = await fetch(`${API_URL}/api/regions`, { signal: AbortSignal.timeout(3000) });
+    if (!res.ok) throw new Error('API error');
+    const data = await res.json();
+
+    // Map API response to dashboard format
+    regions = data.regions.map(r => ({
+      id: r.id,
+      name: r.name,
+      region: r.region,
+      lat: r.lat,
+      lng: r.lng,
+      probability: r.probability,
+      alert_level: r.alert_level,
+      disease_hint: r.disease_hint,
+      signals: r.signals,
+      recommendations: r.recommendations,
+      scored_at: r.scored_at,
+    }));
+
+    // Update API status indicator
+    if (!apiConnected) {
+      apiConnected = true;
+      setAPIStatus(true);
+    }
+
+    // Update topbar from API summary
+    const summary = await fetch(`${API_URL}/api/summary`).then(r => r.json());
+    document.getElementById('stat-critical').textContent = summary.counts.critical;
+    document.getElementById('stat-alerts').textContent = summary.counts.critical + summary.counts.warning + summary.counts.watch;
+    document.getElementById('last-sync').textContent = 'just now (live API)';
+
+    renderAlerts();
+    if (selectedRegion) {
+      const updated = regions.find(r => r.id === selectedRegion.id);
+      if (updated) selectRegion(updated);
+    }
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function setAPIStatus(connected) {
+  const bar = document.querySelector('.bottom-bar .bottom-stat:last-child');
+  if (connected) {
+    bar.innerHTML = '<span style="color:var(--green);">● </span><span>Live API connected · EpiSense Engine v1.0</span>';
+  } else {
+    bar.innerHTML = '<span style="color:var(--amber);">● </span><span>Live demo · EpiSense MVP · episense_api.py for full AI mode</span>';
+  }
+}
+
+// Nudge probabilities slightly for visual life in demo mode
+function nudgeFallbackData() {
+  FALLBACK_REGIONS.forEach(r => {
+    const delta = (Math.random() - 0.48) * 1.5;
+    r.probability = Math.max(5, Math.min(99, r.probability + delta));
+    r.probability = Math.round(r.probability * 10) / 10;
+    if (r.probability >= 70) r.alert_level = 'critical';
+    else if (r.probability >= 40) r.alert_level = 'warning';
+    else if (r.probability >= 20) r.alert_level = 'watch';
+    else r.alert_level = 'normal';
+  });
+}
+
+// Main poll loop — tries API first, falls back to demo data
+async function pollData() {
+  const success = await fetchFromAPI();
+  if (!success) {
+    nudgeFallbackData();
+    regions = FALLBACK_REGIONS;
+    setAPIStatus(false);
+    document.getElementById('last-sync').textContent = 'demo mode';
+    renderAlerts();
+    if (selectedRegion) {
+      const updated = regions.find(r => r.id === selectedRegion.id);
+      if (updated) selectRegion(updated);
+    }
+  }
+}
+
+// Poll every 10 seconds
+setInterval(pollData, 10000);
+
+// Map coordinates (approximate screen %, converted from lat/lng)
+function latLngToXY(lat, lng, w, h) {
+  const x = (lng + 180) / 360 * w;
+  const y = (90 - lat) / 180 * h;
+  return { x, y };
+}
+
+// ── CANVAS MAP ──
+const canvas = document.getElementById('mapCanvas');
+const ctx = canvas.getContext('2d');
+let currentLayer = 'outbreak';
+let selectedRegion = null;
+let animFrame = 0;
+let pulsePhase = 0;
+
+function resizeCanvas() {
+  canvas.width = canvas.offsetWidth;
+  canvas.height = canvas.offsetHeight;
+  drawMap();
+}
+
+function getNodeColor(region) {
+  const level = region.alert_level || region.level;
+  if (level === 'critical') return '#ff4444';
+  if (level === 'warning') return '#ffb020';
+  if (level === 'watch') return '#4488ff';
+  return '#00ff88';
+}
+
+function getProb(r) { return r.probability ?? r.prob ?? 0; }
+function getName(r) { return r.name || r.country || ''; }
+function getLevel(r) { return r.alert_level || r.level || 'normal'; }
+
+function drawMap() {
+  const W = canvas.width, H = canvas.height;
+  ctx.clearRect(0, 0, W, H);
+
+  // Background
+  ctx.fillStyle = '#080c10';
+  ctx.fillRect(0, 0, W, H);
+
+  // Grid lines
+  ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+  ctx.lineWidth = 0.5;
+  for (let i = 0; i <= 12; i++) {
+    ctx.beginPath(); ctx.moveTo(i*W/12, 0); ctx.lineTo(i*W/12, H); ctx.stroke();
+  }
+  for (let i = 0; i <= 6; i++) {
+    ctx.beginPath(); ctx.moveTo(0, i*H/6); ctx.lineTo(W, i*H/6); ctx.stroke();
+  }
+
+  // Equator
+  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 8]);
+  ctx.beginPath(); ctx.moveTo(0, H*0.5); ctx.lineTo(W, H*0.5); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Draw simplified continent shapes
+  drawContinents(W, H);
+
+  regions.forEach(r => {
+    const { x, y } = latLngToXY(r.lat, r.lng, W, H);
+    const col = getNodeColor(r);
+    const prob = getProb(r);
+    const name = getName(r);
+    const level = getLevel(r);
+    const isSelected = selectedRegion && selectedRegion.id === r.id;
+
+    const rings = level === 'critical' ? 3 : level === 'warning' ? 2 : 1;
+    for (let i = 0; i < rings; i++) {
+      const phase = (pulsePhase + i * 0.33) % 1;
+      const radius = 8 + phase * 30;
+      const alpha = (1 - phase) * 0.4;
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.strokeStyle = col + Math.round(alpha * 255).toString(16).padStart(2, '0');
+      ctx.lineWidth = 1;
+      ctx.stroke();
+    }
+
+    const nodeR = isSelected ? 10 : 7;
+    ctx.beginPath();
+    ctx.arc(x, y, nodeR, 0, Math.PI * 2);
+    ctx.fillStyle = col;
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(x, y, nodeR * 0.4, 0, Math.PI * 2);
+    ctx.fillStyle = '#080c10';
+    ctx.fill();
+
+    if (level === 'critical' || level === 'warning' || isSelected) {
+      ctx.font = '500 11px Syne, sans-serif';
+      ctx.fillStyle = col;
+      ctx.textAlign = 'center';
+      ctx.fillText(name, x, y - 14);
+    }
+
+    if (level === 'critical' || isSelected) {
+      const badge = `${Math.round(prob)}%`;
+      ctx.font = '600 10px JetBrains Mono, monospace';
+      const bw = ctx.measureText(badge).width + 10;
+      const bx = x - bw/2, by = y + 16;
+      ctx.fillStyle = col + '33';
+      ctx.beginPath();
+      ctx.roundRect(bx, by, bw, 16, 3);
+      ctx.fill();
+      ctx.fillStyle = col;
+      ctx.textAlign = 'center';
+      ctx.fillText(badge, x, by + 11);
+    }
+  });
+}
+
+function drawContinents(W, H) {
+  ctx.fillStyle = 'rgba(255,255,255,0.04)';
+  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+  ctx.lineWidth = 0.5;
+
+  // North America
+  ctx.beginPath();
+  ctx.moveTo(W*0.08, H*0.12); ctx.lineTo(W*0.22, H*0.08);
+  ctx.lineTo(W*0.28, H*0.12); ctx.lineTo(W*0.30, H*0.22);
+  ctx.lineTo(W*0.25, H*0.28); ctx.lineTo(W*0.22, H*0.38);
+  ctx.lineTo(W*0.18, H*0.42); ctx.lineTo(W*0.14, H*0.38);
+  ctx.lineTo(W*0.10, H*0.30); ctx.lineTo(W*0.07, H*0.20);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+
+  // South America
+  ctx.beginPath();
+  ctx.moveTo(W*0.20, H*0.45); ctx.lineTo(W*0.28, H*0.43);
+  ctx.lineTo(W*0.30, H*0.52); ctx.lineTo(W*0.28, H*0.62);
+  ctx.lineTo(W*0.24, H*0.72); ctx.lineTo(W*0.20, H*0.78);
+  ctx.lineTo(W*0.17, H*0.72); ctx.lineTo(W*0.16, H*0.60);
+  ctx.lineTo(W*0.18, H*0.50);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+
+  // Europe
+  ctx.beginPath();
+  ctx.moveTo(W*0.44, H*0.12); ctx.lineTo(W*0.54, H*0.10);
+  ctx.lineTo(W*0.56, H*0.16); ctx.lineTo(W*0.52, H*0.22);
+  ctx.lineTo(W*0.50, H*0.28); ctx.lineTo(W*0.46, H*0.28);
+  ctx.lineTo(W*0.43, H*0.22); ctx.lineTo(W*0.44, H*0.16);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+
+  // Africa
+  ctx.beginPath();
+  ctx.moveTo(W*0.44, H*0.30); ctx.lineTo(W*0.54, H*0.28);
+  ctx.lineTo(W*0.58, H*0.35); ctx.lineTo(W*0.58, H*0.50);
+  ctx.lineTo(W*0.54, H*0.62); ctx.lineTo(W*0.50, H*0.70);
+  ctx.lineTo(W*0.46, H*0.68); ctx.lineTo(W*0.43, H*0.55);
+  ctx.lineTo(W*0.42, H*0.42); ctx.lineTo(W*0.44, H*0.34);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+
+  // Asia
+  ctx.beginPath();
+  ctx.moveTo(W*0.55, H*0.10); ctx.lineTo(W*0.88, H*0.08);
+  ctx.lineTo(W*0.92, H*0.15); ctx.lineTo(W*0.90, H*0.25);
+  ctx.lineTo(W*0.85, H*0.32); ctx.lineTo(W*0.80, H*0.40);
+  ctx.lineTo(W*0.75, H*0.45); ctx.lineTo(W*0.68, H*0.50);
+  ctx.lineTo(W*0.62, H*0.48); ctx.lineTo(W*0.58, H*0.40);
+  ctx.lineTo(W*0.56, H*0.30); ctx.lineTo(W*0.55, H*0.20);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+
+  // Australia
+  ctx.beginPath();
+  ctx.moveTo(W*0.75, H*0.56); ctx.lineTo(W*0.88, H*0.54);
+  ctx.lineTo(W*0.92, H*0.62); ctx.lineTo(W*0.88, H*0.72);
+  ctx.lineTo(W*0.80, H*0.74); ctx.lineTo(W*0.74, H*0.68);
+  ctx.lineTo(W*0.72, H*0.62);
+  ctx.closePath(); ctx.fill(); ctx.stroke();
+}
+
+// Animate pulses
+function animate() {
+  pulsePhase = (pulsePhase + 0.008) % 1;
+  drawMap();
+  requestAnimationFrame(animate);
+}
+
+function renderAlerts() {
+  const list = document.getElementById('alertList');
+  list.innerHTML = '';
+  const sorted = [...regions].sort((a,b) => getProb(b) - getProb(a));
+  sorted.forEach(r => {
+    const prob = Math.round(getProb(r));
+    const level = getLevel(r);
+    const name = getName(r);
+    const el = document.createElement('div');
+    el.className = `alert-item ${level}`;
+    el.innerHTML = `
+      <div class="alert-top">
+        <div class="alert-country">${name}</div>
+        <div class="alert-badge badge-${level}">${level.toUpperCase()}</div>
+      </div>
+      <div class="alert-disease">${r.disease_hint || r.disease || 'Monitoring'}</div>
+      <div class="alert-prob-bar">
+        <div class="alert-prob-fill fill-${level}" style="width:${prob}%"></div>
+      </div>
+      <div class="alert-meta">
+        <span>${r.region}</span>
+        <span>${prob}% probability</span>
+      </div>
+    `;
+    el.onclick = () => selectRegion(r);
+    list.appendChild(el);
+  });
+  document.getElementById('alert-count').textContent = `${regions.length} regions`;
+
+  const critical = regions.filter(r => getLevel(r) === 'critical').length;
+  const alerts = regions.filter(r => getLevel(r) !== 'normal').length;
+  document.getElementById('stat-alerts').textContent = alerts;
+  document.getElementById('stat-critical').textContent = critical;
+}
+
+function selectRegion(r) {
+  selectedRegion = r;
+  const prob = Math.round(getProb(r));
+  const level = getLevel(r);
+  const name = getName(r);
+
+  document.querySelectorAll('.alert-item').forEach(el => el.classList.remove('selected'));
+  document.querySelectorAll('.alert-item').forEach(el => {
+    if (el.querySelector('.alert-country')?.textContent === name) el.classList.add('selected');
+  });
+
+  document.getElementById('detail-country').textContent = name;
+  document.getElementById('detail-region').textContent = r.region;
+
+  const col = level === 'critical' ? 'var(--red)' :
+              level === 'warning'  ? 'var(--amber)' :
+              level === 'watch'    ? 'var(--blue)' : 'var(--green)';
+
+  const statusText = level === 'critical' ? 'CRITICAL — Immediate action required' :
+                     level === 'warning'  ? 'WARNING — Elevated concern' :
+                     level === 'watch'    ? 'WATCH — Monitor closely' : 'NORMAL — No action needed';
+
+  // Build signal cards from API data
+  const sigKeys = r.signals ? Object.keys(r.signals).slice(0, 4) : [];
+  const sigLabels = {
+    pharmacy_index: 'Pharmacy', clinic_load: 'Clinic load',
+    absenteeism: 'Absenteeism', wastewater_score: 'Wastewater',
+    social_score: 'Social media', travel_anomaly: 'Travel',
+  };
+
+  const signalCards = sigKeys.map(key => {
+    const sig = r.signals[key];
+    const val = typeof sig === 'object' ? sig.value : sig;
+    const chg = typeof sig === 'object' ? sig.change_pct : null;
+    const flagged = typeof sig === 'object' ? sig.flagged : false;
+    const display = typeof val === 'number' ? val.toFixed(1) : val;
+    const chgText = chg != null ? `${chg > 0 ? '+' : ''}${Math.round(chg)}% vs baseline` : '';
+    return `<div class="signal-card">
+      <div class="signal-name">${sigLabels[key] || key}</div>
+      <div class="signal-value" style="color:${flagged ? col : 'var(--text)'}">${display}</div>
+      <div class="signal-change ${chg > 20 ? 'up' : chg < -5 ? 'down' : 'flat'}">${chgText}</div>
+    </div>`;
+  }).join('');
+
+  // Trend sparkline from probability history or flat line
+  const trendData = (r.trend || Array(8).fill(prob)).map((v,i) => ({x:i,y:v}));
+  const sparkSVG = renderSparkline(trendData, col);
+
+  // Timeline from recommendations or defaults
+  const timelineItems = (r.timeline || [`${level === 'normal' ? 'All' : 'Multi-signal'} pattern detected`, 'AI model scored region', 'Alert level assigned']).map((t, i) => `
+    <div class="timeline-item">
+      <div class="timeline-dot" style="background:${col}"></div>
+      <div>
+        <div class="timeline-text">${t}</div>
+        <div class="timeline-time">${i === 0 ? 'recent' : i === 1 ? '6h ago' : '12h ago'}</div>
+      </div>
+    </div>`).join('');
+
+  const recs = r.recommendations || r.recommendation || [];
+
+  document.getElementById('detailBody').innerHTML = `
+    <div class="prob-gauge">
+      <div class="prob-label">OUTBREAK PROBABILITY</div>
+      <div class="prob-value" style="color:${col}">${prob}%</div>
+      <div class="prob-bar">
+        <div class="prob-bar-fill" style="width:${prob}%;background:${col}"></div>
+      </div>
+      <div class="prob-status" style="color:${col}">${statusText}</div>
+    </div>
+    <div class="signal-grid">${signalCards}</div>
+    <div class="timeline-section">
+      <div class="section-label">Probability trend</div>
+      ${sparkSVG}
+    </div>
+    <div class="timeline-section">
+      <div class="section-label">Signal timeline</div>
+      ${timelineItems}
+    </div>
+    ${recs.length ? `<div class="rec-box">
+      <div class="rec-title">AI Recommendations</div>
+      ${recs.slice(0,5).map(rec => `<div class="rec-item"><div class="rec-arrow">→</div><div>${rec}</div></div>`).join('')}
+    </div>` : ''}
+    ${r.scored_at ? `<div style="font-family:var(--mono);font-size:9px;color:var(--text3);padding:4px 0;">Scored by EpiSense AI · ${new Date(r.scored_at).toUTCString()}</div>` : ''}
+  `;
+  lucide.createIcons();
+}
+
+function renderSparkline(data, color) {
+  const w = 260, h = 50;
+  const min = Math.min(...data.map(d => d.y));
+  const max = Math.max(...data.map(d => d.y));
+  const pts = data.map((d, i) => {
+    const x = (i / (data.length - 1)) * w;
+    const y = h - ((d.y - min) / (max - min || 1)) * (h - 8) - 4;
+    return `${x},${y}`;
+  });
+  return `<svg width="${w}" height="${h}" style="width:100%;display:block;">
+    <polyline points="${pts.join(' ')}" fill="none" stroke="${color}" stroke-width="1.5" stroke-linejoin="round"/>
+    ${data.map((d, i) => {
+      const x = (i / (data.length - 1)) * w;
+      const y = h - ((d.y - min) / (max - min || 1)) * (h - 8) - 4;
+      return i === data.length - 1 ? `<circle cx="${x}" cy="${y}" r="3" fill="${color}"/>` : '';
+    }).join('')}
+  </svg>`;
+}
+
+// ── LAYER TOGGLE ──
+function setLayer(layer) {
+  currentLayer = layer;
+  document.querySelectorAll('.map-btn').forEach(b => b.classList.remove('active'));
+  event.target.closest('.map-btn').classList.add('active');
+}
+
+// ── CLOCK ──
+function updateClock() {
+  const now = new Date();
+  const h = String(now.getUTCHours()).padStart(2,'0');
+  const m = String(now.getUTCMinutes()).padStart(2,'0');
+  const s = String(now.getUTCSeconds()).padStart(2,'0');
+  document.getElementById('clock').textContent = `${h}:${m}:${s} UTC`;
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// ── CANVAS CLICK ──
+canvas.addEventListener('click', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  const W = canvas.width, H = canvas.height;
+  let closest = null, closestDist = 25;
+  regions.forEach(r => {
+    const { x, y } = latLngToXY(r.lat, r.lng, W, H);
+    const dist = Math.sqrt((mx-x)**2 + (my-y)**2);
+    if (dist < closestDist) { closest = r; closestDist = dist; }
+  });
+  if (closest) selectRegion(closest);
+});
+
+// ── TOOLTIP ──
+canvas.addEventListener('mousemove', (e) => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  const W = canvas.width, H = canvas.height;
+  const tip = document.getElementById('tooltip');
+  let hovered = null;
+  regions.forEach(r => {
+    const { x, y } = latLngToXY(r.lat, r.lng, W, H);
+    if (Math.sqrt((mx-x)**2 + (my-y)**2) < 18) hovered = r;
+  });
+  if (hovered) {
+    tip.style.display = 'block';
+    tip.style.left = (e.clientX - rect.left + 12) + 'px';
+    tip.style.top = (e.clientY - rect.top - 10) + 'px';
+    tip.textContent = `${getName(hovered)} — ${Math.round(getProb(hovered))}% outbreak probability`;
+    canvas.style.cursor = 'pointer';
+  } else {
+    tip.style.display = 'none';
+    canvas.style.cursor = 'default';
+  }
+});
+
+// ── INIT ──
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+animate();
+
+// Load data immediately then poll
+regions = FALLBACK_REGIONS;
+renderAlerts();
+setAPIStatus(false);
+lucide.createIcons();
+
+// Try API first, then keep polling
+pollData();
+
+// Auto-select top threat after a moment
+setTimeout(() => {
+  if (regions.length > 0) {
+    const first = [...regions].sort((a,b) => getProb(b) - getProb(a))[0];
+    selectRegion(first);
+  }
+}, 600);
+</script>
+</body>
+</html>
